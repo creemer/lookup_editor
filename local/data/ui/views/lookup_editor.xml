@@ -1,0 +1,33 @@
+<dashboard script="index.js" >
+  <init>
+    <set token="new_token">[]</set>
+    <set token="table-values"></set>
+  </init>
+  <label>Lookup Editor</label>
+  <fieldset>
+    <input type="text" token="changeField">
+      <label>Field</label>
+    </input>
+  </fieldset>
+  <row>
+    <html>
+      <style>
+        #add-new-app {
+          display: none;
+        }
+      </style>
+      <div id="main-wrapper">
+        <div id="searchBarDiv"></div>
+        <div id="tableDiv"></div>
+        <button id="ten" class="btn">10s</button>
+        <button id="fifty" class="btn">50s</button>
+        <button id="hundred" class="btn">100s</button>
+        <button id="notNull" class="btn">Not Null</button>
+        <button id="withNull" class="btn">With Null</button>
+        <button id="grabData" class="btn">Grab Data</button>
+        <button id="concatData" class="btn">Concat Data</button>
+      </div>
+    </html>
+  </row>
+  
+</dashboard>
