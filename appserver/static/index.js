@@ -24,7 +24,7 @@ require([
     new TableView({
         id: "example-table",
         managerid: "postproc1",
-        pageSize: "10",
+        pageSize: "100000",
         el: $("#tableDiv") // seperate div
     }).render();
     
@@ -63,6 +63,9 @@ require([
         let changed = JSON.parse(defaultTokenModel.get('new_token'));
         let tableValues = JSON.parse(defaultTokenModel.get('table-values'));
 
+        /**
+         * compare two arrays: with all search values
+         */
         for(let i = 0, len = tableValues.length; i < len; i++) {
             for (let j = 0; j < changed.length; j++) {
                 if(tableValues[i][0] !== changed[j][0]) {
@@ -74,7 +77,9 @@ require([
             }
         }
 
-        console.log('tableValues', tableValues);
+        defaultTokenModel.set('table-values-final', JSON.stringify(tableValues));
+        submittedTokenModel.set('table-values-final', JSON.stringify(tableValues));
+        console.log('tableValues', JSON.stringify(tableValues));
     });
 
     grabData.addEventListener('click', function() {
@@ -85,46 +90,60 @@ require([
     table.on("click:cell", function(ev) {
         ev.preventDefault();
         console.log('event', ev);
-        if(ev.field === '_time') return;
 
-        let tokenInner = defaultTokenModel.get('new_token');
-        tokenInner = JSON.parse(tokenInner);
+        if(ev.field === '_time') return;
+        if(!window.confirm('You want to change value?')) return;
+        
+        let tokenInner = JSON.parse(defaultTokenModel.get('new_token'));
 
         if(!tokenInner.length || tokenInner.length < 1) tokenInner = [];
         
-        let obj = [];
+        ev.value = prompt('Please enter the value', ev.value) || ev.value;
 
-        if(window.confirm('You want to change value?')) {
-            ev.value = prompt('Please enter the value', ev.value);
-        }
-        
+        //make the array of values
+        let obj = [];
         obj[0] = ev.data["row._time"];
         obj[1] = ev.value;
         tokenInner.push(obj);
 
+        //push this data to token in json format
         defaultTokenModel.set('new_token', JSON.stringify(tokenInner));
+
+        /**
+         * get cell adress in table, by ev.index value and ev.column value. 
+         * it is like a matrix.
+         * and change the value, to user value.
+         */
+        let tbody = table.el.querySelector('tbody');
+        let cell = '[data-row-index="'+ ev.index +'"] ' + '[data-cell-index="'+ ev.column +'"]';
+        tbody.querySelector(cell).innerText = ev.value;
 
         console.log('new_token', defaultTokenModel.get('new_token'));
     });
 
+    // push value from search bar to search manager.
     searchbar.on("change", function() {
         manager.set("search", searchbar.val()); 
     });
     
+    // push value from timerange component to search manager.
     timerange.on("change", function() {
         manager.search.set(timerange.val()); 
     });
 
+    // make search WITH postprocess search.
     notNull.addEventListener('click', function() {
         table.settings.set('managerid', 'postproc1');
         manager.startSearch();
     });
     
+    // make search WITHOUT postprocess search.
     withNull.addEventListener('click', function() {
         table.settings.set('managerid', 'main-search');
         manager.startSearch();
     });
 
+    // add eventlisteners to  buttons, on array "buttons"
     buttons.forEach(function(button) {
 
         button.addEventListener('click', function() {
@@ -147,6 +166,8 @@ require([
         })
     });
     
+    // get main search instance based on tablemanager value.
+    // then get data instance from search
     var mySearch = splunkjs.mvc.Components.getInstance(table.settings.get('managerid'));
     var myResult = mySearch.data('results', {count: 0});
     
@@ -165,11 +186,22 @@ require([
         defaultTokenModel.set('table-values', JSON.stringify(results._data['rows']));
         defaultTokenModel.set('new_token', '[]');
         
+        var maxCount = parseInt(defaultTokenModel.get('maxCount'), 10);
+        console.log('maxCount', maxCount, typeof(maxCount));
+
         // can doing something with data
-        if(results._data['rows'].length > 150) {
+        if(results._data['rows'].length > maxCount) {
             // some code
+            if(confirm('Зеначений в таблице больше чем ' + maxCount +'!! Вы точно хотите их отобразить?')) {
+                return;
+            } else {
+                table.el.style.display = 'none';
+                alert('Слишком много значений.')
+            }
         } else {
             // some code
+            console.log('results._data["rows"].length', results._data['rows'].length);
+            table.el.style.display = '';
         }
     })
 
